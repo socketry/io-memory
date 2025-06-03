@@ -7,6 +7,6 @@
 class IO
 	# @namespace
 	module Memory
-		VERSION = "0.0.0"
+		VERSION = "0.0.1"
 	end
 end

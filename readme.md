@@ -27,14 +27,16 @@ This gem is designed to work seamlessly with Ruby's `IO::Buffer` class, providin
 
 Please see the [project documentation](https://socketry.github.io/io-memory/) for more details.
 
-  - [Getting Started](https://socketry.github.io/io-memory/guides/getting-started/index) - This guide explains how to use `io-memory` for efficient memory operations.
+  - [Getting Started](https://socketry.github.io/io-memory/guides/getting-started/index) - This guide explains how to use `io-memory` for efficient memory operations and zero-copy data sharing.
+
+  - [Process Memory Sharing](https://socketry.github.io/io-memory/guides/process-sharing/index) - This guide demonstrates how to share memory between processes using `io-memory` for high-performance inter-process communication (IPC).
 
 ## Platform Support
 
 | Platform | Implementation | Features |
-|----------|----------------|----------|
+| --- | --- | --- |
 | Linux | `memfd_create()` | Anonymous memory, file descriptor passing |
-| macOS/BSD | `shm_open()` | POSIX shared memory, file descriptor passing |  
+| macOS/BSD | `shm_open()` | POSIX shared memory, file descriptor passing |
 | Windows/Other | Temporary files | File descriptor passing, maximum compatibility |
 
 ## Performance
@@ -48,7 +50,16 @@ Please see the [project documentation](https://socketry.github.io/io-memory/) fo
 
 ## Releases
 
-Please see the [project releases](releases.md) for all releases.
+Please see the [project releases](https://socketry.github.io/io-memory/releases/index) for all releases.
+
+### v0.0.1
+
+  - Initial implementation with cross-platform memory mapping support
+  - Linux `memfd_create()` implementation for anonymous memory objects
+  - POSIX `shm_open()` implementation for shared memory
+  - Generic temporary file fallback for maximum compatibility
+  - Integration with Ruby's `IO::Buffer` class
+  - Automatic resource cleanup with `with` blocks
 
 ## Contributing
 

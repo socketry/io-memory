@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.0.1
 
   - Initial implementation with cross-platform memory mapping support
   - Linux `memfd_create()` implementation for anonymous memory objects
