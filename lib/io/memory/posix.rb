@@ -20,10 +20,10 @@ module IO::Memory
 				@supported
 			end
 			
-			# POSIX shared memory constants
-			O_CREAT = 0x0200
-			O_EXCL = 0x0800  
-			O_RDWR = 0x0002
+			# Use Ruby's File constants instead of hardcoded values for cross-platform compatibility
+			O_CREAT = IO::CREAT
+			O_EXCL = IO::EXCL
+			O_RDWR = IO::RDWR
 							
 			# Load system functions
 			LIBC = Fiddle.dlopen(nil)
@@ -84,13 +84,11 @@ module IO::Memory
 				# Generate a unique name using multiple entropy sources to avoid collisions
 				# in high-concurrency situations
 				max_attempts = 8
+				last_error = nil
 				
 				max_attempts.times do
-					# Combine multiple entropy sources for uniqueness:
-					# - Process PID
-					# - Thread object ID (unique per thread)
-					# - Microsecond timestamp 
-					shm_name = "/#{Process.pid}_#{Fiber.current.object_id}_#{Time.now.usec}"
+					# The most portable maximum length for a POSIX shared memory name is 14 characters:
+					shm_name = "/#{SecureRandom.hex(7)}"
 					
 					# Create shared memory object with O_EXCL to ensure uniqueness
 					shm_fd = SHM_OPEN.call(shm_name, O_CREAT | O_EXCL | O_RDWR, 0600)
@@ -100,7 +98,7 @@ module IO::Memory
 						if FTRUNCATE.call(shm_fd, size) == 0
 							# Create IO object from file descriptor
 							io = ::IO.for_fd(shm_fd, autoclose: true)
-							
+
 							# Return Handle that manages both IO and cleanup
 							return Handle.new(io, shm_name, size)
 						else
@@ -108,12 +106,19 @@ module IO::Memory
 							SHM_UNLINK.call(shm_name)
 							raise IO::Memory::MemoryError, "Failed to set shared memory size to #{size}!"
 						end
+					else
+						# Store the error for potential debugging
+						last_error = Fiddle.last_error
 					end
 					# If we get here, shm_open failed (likely name collision), try again with new name
 				end
 				
-				# If we've exhausted all attempts
-				raise IO::Memory::MemoryError, "Failed to create shared memory object after #{max_attempts} attempts!"
+				# If we've exhausted all attempts:
+				if last_error
+					cause = SystemCallError.new(last_error)
+				end
+				
+				raise IO::Memory::MemoryError, "Failed to create shared memory object after #{max_attempts} attempts!", cause: cause
 			end
 
 			@supported = true
