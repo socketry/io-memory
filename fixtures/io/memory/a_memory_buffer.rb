@@ -80,16 +80,7 @@ module IO::Memory
 			expect(result).to be == "test_result"
 			expect(handle_ref.closed?).to be == true
 		end
-				
-		it "provides implementation information" do
-			info = subject.info
 						
-			expect(info).to be_a(Hash)
-			expect(info[:implementation]).to be_a(String)
-			expect(info[:platform]).to be_a(String)
-			expect(info[:features]).to be_a(Array)
-		end
-				
 		it "handles zero-sized buffers" do
 			begin
 				handle = subject.new(0)

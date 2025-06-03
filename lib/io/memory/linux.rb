@@ -13,113 +13,98 @@ module IO::Memory
 	# that exist only in memory without being backed by any filesystem.
 	module Linux
 		extend self
-				
-		# Check if the Linux implementation is supported on this platform.
-		# This implementation requires Linux with memfd_create system call support.
-		# @returns [Boolean] true if running on Linux, false otherwise
-		def self.supported?
-			RUBY_PLATFORM.match?(/linux/i)
-		end
-				
-		if supported?
-			module Implementation
-				extend Fiddle::Importer
-								
-				# Import libc functions
-				dlload Fiddle.dlopen(nil)
-								
-				# memfd_create system call constants
-				MFD_CLOEXEC = 0x01
-				MFD_ALLOW_SEALING = 0x02
-								
-				# Import memfd_create function
-				begin
-					extern "int memfd_create(const char*, unsigned int)"
-				rescue Fiddle::DLError
-					# Fall back to syscall if memfd_create is not available in libc
-					begin
-						extern "long syscall(long, ...)"
-												
-						# memfd_create syscall number for Linux x86_64
-						SYS_MEMFD_CREATE = 319
-												
-						def self.memfd_create(name, flags)
-							syscall(SYS_MEMFD_CREATE, name, flags)
-						end
-					rescue Fiddle::DLError => error
-						raise LoadError, "memfd_create system call not available!"
-					end
-				end
-								
-				# Import ftruncate for resizing the memory file
-				begin
-					extern "int ftruncate(int, long)"
-				rescue Fiddle::DLError => error
-					raise LoadError, "ftruncate function not available!"
-				end
 
-				# Handle class that wraps the IO
-				class Handle
-					def initialize(io, size)
-						@io = io
-						@size = size
-					end
-										
-					def io
-						@io
-					end
-										
-					def map(size = nil)
-						size ||= @size
-						::IO::Buffer.map(@io, size)
-					end
-										
-					def close
-						@io.close unless @io.closed?
-					end
-										
-					def closed?
-						@io.closed?
-					end
-				end
+		module Implementation
+			extend Fiddle::Importer
+			
+			def self.supported?
+				@supported
+			end
+							
+			# Import libc functions
+			dlload Fiddle.dlopen(nil)
+							
+			# memfd_create system call constants
+			MFD_CLOEXEC = 0x01
+			MFD_ALLOW_SEALING = 0x02
+							
+			# Import memfd_create function
+			extern "int memfd_create(const char*, unsigned int)"
+			
+			# Import ftruncate for resizing the memory file
+			extern "int ftruncate(int, long)"
 
-				def self.create_handle(size)
-					# Create the memory file descriptor
-					file_descriptor = memfd_create("io_memory", MFD_CLOEXEC)
-										
-					if file_descriptor == -1
-						raise IO::Memory::MemoryError, "Failed to create memfd!"
-					end
-										
-					# Set the size
-					if ftruncate(file_descriptor, size) == -1
-						# Clean up on error
-						begin
-							::IO.for_fd(file_descriptor).close
-						rescue
-							# Ignore cleanup errors
-						end
-						raise IO::Memory::MemoryError, "Failed to set memfd size!"
-					end
-										
-					# Convert to IO object and wrap in Handle
-					io = ::IO.for_fd(file_descriptor, autoclose: true)
-					Handle.new(io, size)
-				rescue => error
-					# Clean up on any error
-					if defined?(file_descriptor) && file_descriptor && file_descriptor != -1
-						begin
-							::IO.for_fd(file_descriptor).close
-						rescue
-							# Ignore cleanup errors
-						end
-					end
-					raise
+			# Handle class that wraps the IO
+			class Handle
+				def initialize(io, size)
+					@io = io
+					@size = size
+				end
+									
+				def io
+					@io
+				end
+									
+				def map(size = nil)
+					size ||= @size
+					::IO::Buffer.map(@io, size)
+				end
+									
+				def close
+					@io.close unless @io.closed?
+				end
+									
+				def closed?
+					@io.closed?
 				end
 			end
-						
-			private_constant :Implementation
 
+			def self.create_handle(size)
+				# Create the memory file descriptor
+				file_descriptor = memfd_create("io_memory", MFD_CLOEXEC)
+									
+				if file_descriptor == -1
+					raise IO::Memory::MemoryError, "Failed to create memfd!"
+				end
+									
+				# Set the size
+				if ftruncate(file_descriptor, size) == -1
+					# Clean up on error
+					begin
+						::IO.for_fd(file_descriptor).close
+					rescue
+						# Ignore cleanup errors
+					end
+					raise IO::Memory::MemoryError, "Failed to set memfd size!"
+				end
+									
+				# Convert to IO object and wrap in Handle
+				io = ::IO.for_fd(file_descriptor, autoclose: true)
+				Handle.new(io, size)
+			rescue => error
+				# Clean up on any error
+				if defined?(file_descriptor) && file_descriptor && file_descriptor != -1
+					begin
+						::IO.for_fd(file_descriptor).close
+					rescue
+						# Ignore cleanup errors
+					end
+				end
+				raise
+			end
+
+			@supported = true
+		rescue => error
+			@supported = false
+		end
+
+		private_constant :Implementation
+
+		def self.supported?
+			Implementation.supported?
+		end
+
+		if supported?
 			# Create a new memory-mapped buffer using Linux memfd_create.
 			# This creates an anonymous memory object that exists only in memory
 			# without being backed by any filesystem.
@@ -144,16 +129,6 @@ module IO::Memory
 					handle.close
 				end
 			end
-						
-			# Get information about the Linux implementation.
-			# @returns [Hash] implementation details including platform and features
-			def info
-				{
-					implementation: "Linux memfd_create",
-					platform: RUBY_PLATFORM,
-					features: ["file_descriptor_passing", "zero_copy", "anonymous_memory"]
-				}
-			end
 		end
 	end
-end 
+end
