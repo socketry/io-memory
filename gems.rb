@@ -1,12 +1,26 @@
+# frozen_string_literal: true
+
+# Released under the MIT License.
+# Copyright, 2025, by Shopify Inc.
+
 source "https://rubygems.org"
 
-gem "wasmtime"
+gemspec
 
-gem "async"
-gem "async-io"
-gem "async-service"
-gem "async-container-supervisor"
-gem "io-endpoint"
-gem "io-stream"
+group :maintenance, optional: true do
+	gem "bake-gem"
+	gem "bake-modernize"
+	gem "bake-releases"
+	
+	gem "utopia-project"
+end
 
-gem "sus"
+group :test do
+	gem "sus"
+	gem "covered"
+	gem "decode"
+	gem "rubocop"
+	
+	gem "bake-test"
+	gem "bake-test-external"
+end
