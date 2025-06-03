@@ -100,6 +100,7 @@ module IO::Memory
 						if FTRUNCATE.call(shm_fd, size) == 0
 							# Create IO object from file descriptor
 							io = ::IO.for_fd(shm_fd, autoclose: true)
+							
 							# Return Handle that manages both IO and cleanup
 							return Handle.new(io, shm_name, size)
 						else

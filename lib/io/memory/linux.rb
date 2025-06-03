@@ -21,18 +21,32 @@ module IO::Memory
 				@supported
 			end
 							
-			# Import libc functions
-			dlload Fiddle.dlopen(nil)
-							
 			# memfd_create system call constants
 			MFD_CLOEXEC = 0x01
 			MFD_ALLOW_SEALING = 0x02
-							
-			# Import memfd_create function
-			extern "int memfd_create(const char*, unsigned int)"
 			
-			# Import ftruncate for resizing the memory file
-			extern "int ftruncate(int, long)"
+			# Load system functions
+			LIBC = Fiddle.dlopen(nil)
+			
+			# Load memfd_create function
+			MEMFD_CREATE = Fiddle::Function.new(
+				LIBC["memfd_create"],
+				[Fiddle::TYPE_VOIDP, Fiddle::TYPE_UINT],
+				Fiddle::TYPE_INT
+			)
+			
+			# Load ftruncate function
+			FTRUNCATE = Fiddle::Function.new(
+				LIBC["ftruncate"],
+				[Fiddle::TYPE_INT, Fiddle::TYPE_LONG],
+				Fiddle::TYPE_INT
+			)
+
+			CLOSE = Fiddle::Function.new(
+				LIBC["close"],
+				[Fiddle::TYPE_INT],
+				Fiddle::TYPE_INT
+			)
 
 			# Handle class that wraps the IO
 			class Handle
@@ -61,17 +75,17 @@ module IO::Memory
 
 			def self.create_handle(size)
 				# Create the memory file descriptor
-				file_descriptor = memfd_create("io_memory", MFD_CLOEXEC)
+				file_descriptor = MEMFD_CREATE.call("io_memory", MFD_CLOEXEC)
 									
 				if file_descriptor == -1
 					raise IO::Memory::MemoryError, "Failed to create memfd!"
 				end
 									
 				# Set the size
-				if ftruncate(file_descriptor, size) == -1
+				if FTRUNCATE.call(file_descriptor, size) == -1
 					# Clean up on error
 					begin
-						::IO.for_fd(file_descriptor).close
+						CLOSE.call(file_descriptor)
 					rescue
 						# Ignore cleanup errors
 					end
@@ -80,12 +94,13 @@ module IO::Memory
 									
 				# Convert to IO object and wrap in Handle
 				io = ::IO.for_fd(file_descriptor, autoclose: true)
-				Handle.new(io, size)
+				
+				return Handle.new(io, size)
 			rescue => error
 				# Clean up on any error
-				if defined?(file_descriptor) && file_descriptor && file_descriptor != -1
+				if file_descriptor and file_descriptor != -1
 					begin
-						::IO.for_fd(file_descriptor).close
+						CLOSE.call(file_descriptor)
 					rescue
 						# Ignore cleanup errors
 					end
@@ -94,7 +109,7 @@ module IO::Memory
 			end
 
 			@supported = true
-		rescue => error
+		rescue
 			@supported = false
 		end
 

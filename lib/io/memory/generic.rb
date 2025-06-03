@@ -61,7 +61,8 @@ module IO::Memory
 											
 					# Create IO from file descriptor and wrap in Handle
 					io = ::IO.for_fd(tempfile.fileno, autoclose: false)
-					Handle.new(io, tempfile, size)
+					
+					return Handle.new(io, tempfile, size)
 				rescue => error
 					# Clean up on error
 					tempfile.close
