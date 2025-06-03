@@ -128,6 +128,10 @@ module IO::Memory
 					
 		private_constant :Implementation
 
+		# Check if the POSIX shared memory implementation is supported on this system.
+		# This implementation uses shm_open() and is available on POSIX-compliant systems
+		# like macOS, BSD, and some Linux configurations with shared memory support.
+		# @returns [Boolean] true if POSIX shared memory is available, false otherwise
 		def self.supported?
 			Implementation.supported?
 		end

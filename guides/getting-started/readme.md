@@ -93,24 +93,6 @@ partial_buffer.set_string("Only first KB", 0)
 handle.close
 ```
 
-## Platform Information
-
-Check which implementation is being used on your platform:
-
-```ruby
-require 'io/memory'
-
-info = IO::Memory.info
-puts "Implementation: #{info[:implementation]}"
-puts "Platform: #{info[:platform]}"
-puts "Features: #{info[:features].join(', ')}"
-
-# Example outputs:
-# Linux: "Implementation: Linux memfd_create"
-# macOS: "Implementation: POSIX shm_open"  
-# Windows: "Implementation: Generic tempfile"
-```
-
 ## Error Handling
 
 Handle platform-specific limitations gracefully:

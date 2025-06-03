@@ -74,6 +74,11 @@ module IO::Memory
 		
 		private_constant :Implementation
 
+		# Check if the generic temporary file implementation is supported on this system.
+		# This implementation always returns true as it uses standard Ruby temporary files
+		# which are available on all platforms. It serves as a fallback when platform-specific
+		# implementations like Linux memfd_create or POSIX shm_open are not available.
+		# @returns [Boolean] always true, as temporary files are universally supported
 		def self.supported?
 			true
 		end

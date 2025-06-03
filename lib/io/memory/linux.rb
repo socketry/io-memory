@@ -23,7 +23,6 @@ module IO::Memory
 							
 			# memfd_create system call constants
 			MFD_CLOEXEC = 0x01
-			MFD_ALLOW_SEALING = 0x02
 			
 			# Load system functions
 			LIBC = Fiddle.dlopen(nil)
@@ -115,6 +114,10 @@ module IO::Memory
 
 		private_constant :Implementation
 
+		# Check if the Linux memfd_create implementation is supported on this system.
+		# This implementation uses the memfd_create() system call available on Linux 3.17+
+		# and provides the most efficient memory mapping by creating anonymous memory objects.
+		# @returns [Boolean] true if memfd_create is available, false otherwise
 		def self.supported?
 			Implementation.supported?
 		end
