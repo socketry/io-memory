@@ -46,16 +46,16 @@ module IO::Memory
 						def self.memfd_create(name, flags)
 							syscall(SYS_MEMFD_CREATE, name, flags)
 						end
-					rescue Fiddle::DLError => e
-						raise LoadError, "memfd_create system call not available: #{e.message}"
+					rescue Fiddle::DLError => error
+						raise LoadError, "memfd_create system call not available!"
 					end
 				end
 								
 				# Import ftruncate for resizing the memory file
 				begin
 					extern "int ftruncate(int, long)"
-				rescue Fiddle::DLError => e
-					raise LoadError, "ftruncate function not available: #{e.message}"
+				rescue Fiddle::DLError => error
+					raise LoadError, "ftruncate function not available!"
 				end
 
 				# Handle class that wraps the IO
@@ -85,31 +85,31 @@ module IO::Memory
 
 				def self.create_handle(size)
 					# Create the memory file descriptor
-					fd = memfd_create("io_memory", MFD_CLOEXEC)
+					file_descriptor = memfd_create("io_memory", MFD_CLOEXEC)
 										
-					if fd == -1
-						raise IO::Memory::MemoryError, "Failed to create memfd: #{Fiddle.last_error}"
+					if file_descriptor == -1
+						raise IO::Memory::MemoryError, "Failed to create memfd!"
 					end
 										
 					# Set the size
-					if ftruncate(fd, size) == -1
+					if ftruncate(file_descriptor, size) == -1
 						# Clean up on error
 						begin
-							::IO.for_fd(fd).close
+							::IO.for_fd(file_descriptor).close
 						rescue
 							# Ignore cleanup errors
 						end
-						raise IO::Memory::MemoryError, "Failed to set memfd size: #{Fiddle.last_error}"
+						raise IO::Memory::MemoryError, "Failed to set memfd size!"
 					end
 										
 					# Convert to IO object and wrap in Handle
-					io = ::IO.for_fd(fd, autoclose: true)
+					io = ::IO.for_fd(file_descriptor, autoclose: true)
 					Handle.new(io, size)
-				rescue => e
+				rescue => error
 					# Clean up on any error
-					if defined?(fd) && fd && fd != -1
+					if defined?(file_descriptor) && file_descriptor && file_descriptor != -1
 						begin
-							::IO.for_fd(fd).close
+							::IO.for_fd(file_descriptor).close
 						rescue
 							# Ignore cleanup errors
 						end
@@ -149,10 +149,10 @@ module IO::Memory
 			# @returns [Hash] implementation details including platform and features
 			def info
 				{
-										implementation: "Linux memfd_create",
-										platform: RUBY_PLATFORM,
-										features: ["file_descriptor_passing", "zero_copy", "anonymous_memory"]
-								}
+					implementation: "Linux memfd_create",
+					platform: RUBY_PLATFORM,
+					features: ["file_descriptor_passing", "zero_copy", "anonymous_memory"]
+				}
 			end
 		end
 	end

@@ -71,11 +71,11 @@ module IO::Memory
 						# Create IO from file descriptor and wrap in Handle
 						io = ::IO.for_fd(tempfile.fileno, autoclose: false)
 						Handle.new(io, tempfile, size)
-					rescue => e
+					rescue => error
 						# Clean up on error
 						tempfile.close
 						tempfile.unlink if File.exist?(tempfile.path)
-						raise IO::Memory::MemoryError, "Failed to create temporary file buffer: #{e.message}"
+						raise IO::Memory::MemoryError, "Failed to create temporary file buffer!"
 					end
 				end
 			end

@@ -54,6 +54,12 @@ Layout/ExtraSpacing:
 Layout/RescueEnsureAlignment:
   Enabled: true
 
+Layout/HashAlignment:
+  Enabled: true
+
+Layout/FirstHashElementIndentation:
+  Enabled: true
+
 Style/FrozenStringLiteralComment:
   Enabled: true
 

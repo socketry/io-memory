@@ -37,24 +37,24 @@ module IO::Memory
 								
 				begin
 					SHM_OPEN = Fiddle::Function.new(
-												LIBC["shm_open"],
-												[Fiddle::TYPE_VOIDP, Fiddle::TYPE_INT, Fiddle::TYPE_INT],
-												Fiddle::TYPE_INT
-										)
-										
+						LIBC["shm_open"],
+						[Fiddle::TYPE_VOIDP, Fiddle::TYPE_INT, Fiddle::TYPE_INT],
+						Fiddle::TYPE_INT
+					)
+					
 					SHM_UNLINK = Fiddle::Function.new(
-												LIBC["shm_unlink"], 
-												[Fiddle::TYPE_VOIDP],
-												Fiddle::TYPE_INT
-										)
-										
+						LIBC["shm_unlink"], 
+						[Fiddle::TYPE_VOIDP],
+						Fiddle::TYPE_INT
+					)
+					
 					FTRUNCATE = Fiddle::Function.new(
-												LIBC["ftruncate"],
-												[Fiddle::TYPE_INT, Fiddle::TYPE_LONG],
-												Fiddle::TYPE_INT
-										)
-				rescue Fiddle::DLError => e
-					raise LoadError, "POSIX shared memory functions not available: #{e.message}"
+						LIBC["ftruncate"],
+						[Fiddle::TYPE_INT, Fiddle::TYPE_LONG],
+						Fiddle::TYPE_INT
+					)
+				rescue Fiddle::DLError => error
+					raise LoadError, "POSIX shared memory functions not available!"
 				end
 
 				class MemoryError < StandardError; end
@@ -113,13 +113,13 @@ module IO::Memory
 							else
 								# ftruncate failed, clean up
 								SHM_UNLINK.call(shm_name)
-								raise IO::Memory::MemoryError, "Failed to set shared memory size to #{size}"
+								raise IO::Memory::MemoryError, "Failed to set shared memory size to #{size}!"
 							end
 						else
 							# shm_open failed, try again with different name
 							attempts += 1
 							if attempts >= max_attempts
-								raise IO::Memory::MemoryError, "Failed to create shared memory object after #{max_attempts} attempts"
+								raise IO::Memory::MemoryError, "Failed to create shared memory object after #{max_attempts} attempts!"
 							end
 						end
 					end
@@ -157,10 +157,10 @@ module IO::Memory
 			# @returns [Hash] implementation details including platform and features
 			def info
 				{
-										implementation: "POSIX shared memory (shm_open)",
-										platform: RUBY_PLATFORM,
-										features: ["file_descriptor_passing", "zero_copy", "posix_shared_memory"]
-								}
+					implementation: "POSIX shared memory (shm_open)",
+					platform: RUBY_PLATFORM,
+					features: ["file_descriptor_passing", "zero_copy", "posix_shared_memory"]
+				}
 			end
 		end
 	end
