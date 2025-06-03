@@ -7,24 +7,9 @@ require "sus"
 require "io/memory"
 require "io/memory/a_memory_buffer"
 
-# Try to require all implementations to check their support
-begin
-	require "io/memory/linux"
-rescue LoadError
-	# Linux not available on this platform
-end
-
-begin  
-	require "io/memory/posix"
-rescue LoadError
-	# POSIX not available on this platform
-end
-
-begin
-	require "io/memory/generic"  
-rescue LoadError
-	# Generic should always be available
-end
+require "io/memory/linux"
+require "io/memory/posix"
+require "io/memory/generic"  
 
 describe IO::Memory do
 	it_behaves_like IO::Memory::AMemoryBuffer

@@ -7,9 +7,19 @@ require "fiddle"
 require "securerandom"
 
 module IO::Memory
+	# POSIX implementation of memory-mapped IO using shm_open.
+	# This implementation provides efficient memory mapping on POSIX-compliant
+	# systems (macOS, BSD, etc.) by using the shm_open system call to create
+	# shared memory objects. These objects can be shared between processes
+	# and provide zero-copy memory operations.
 	module POSIX
 		extend self
 				
+		# Check if the POSIX implementation is supported on this platform.
+		# This implementation works on Unix-like systems that support POSIX
+		# shared memory, excluding Linux (which has its own implementation)
+		# and Windows platforms.
+		# @returns [Boolean] true if POSIX shared memory is supported, false otherwise
 		def self.supported?
 			# POSIX shared memory is available on Unix-like systems (not Linux since we have a dedicated implementation, not Windows)
 			!RUBY_PLATFORM.match?(/linux|mingw|mswin/i)
@@ -43,8 +53,8 @@ module IO::Memory
 												[Fiddle::TYPE_INT, Fiddle::TYPE_LONG],
 												Fiddle::TYPE_INT
 										)
-								rescue Fiddle::DLError => e
-									raise LoadError, "POSIX shared memory functions not available: #{e.message}"
+				rescue Fiddle::DLError => e
+					raise LoadError, "POSIX shared memory functions not available: #{e.message}"
 				end
 
 				class MemoryError < StandardError; end
@@ -68,12 +78,12 @@ module IO::Memory
 										
 					def close
 						@io.close unless @io.closed?
-										ensure
-											# Unlink the shared memory object
-											if @shm_name
-												Implementation::SHM_UNLINK.call(@shm_name)
-												@shm_name = nil
-											end
+					ensure
+						# Unlink the shared memory object
+						if @shm_name
+							Implementation::SHM_UNLINK.call(@shm_name)
+							@shm_name = nil
+						end
 					end
 										
 					def closed?
@@ -118,19 +128,33 @@ module IO::Memory
 						
 			private_constant :Implementation
 
+			# Create a new memory-mapped buffer using POSIX shared memory.
+			# This creates a shared memory object using shm_open that can be
+			# shared between processes and provides zero-copy operations.
+			# @parameter size [Integer] size of the memory buffer in bytes
+			# @returns [Object] a handle object that provides access to the memory buffer
 			def new(size)
 				Implementation.create_handle(size)
 			end
 
+			# Create a memory-mapped buffer and yield it to a block.
+			# The buffer is automatically cleaned up when the block exits,
+			# regardless of whether an exception is raised.
+			# @parameter size [Integer] size of the memory buffer in bytes
+			# @yields {|handle| ...}
+			# 	@parameter handle [Object] the handle to the memory buffer with access to IO and mapping operations
+			# @returns [Object] the result of the block execution
 			def with(size, &block)
 				handle = new(size)
 				begin
 					yield handle
-								ensure
-									handle.close
+				ensure
+					handle.close
 				end
 			end
 						
+			# Get information about the POSIX implementation.
+			# @returns [Hash] implementation details including platform and features
 			def info
 				{
 										implementation: "POSIX shared memory (shm_open)",

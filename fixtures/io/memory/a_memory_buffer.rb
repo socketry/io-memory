@@ -99,15 +99,15 @@ module IO::Memory
 				expect(buffer.size).to be == 0
 								
 				handle.close
-						rescue Errno::EINVAL
-							# Zero-size buffers may not be supported on all platforms
-							# This is acceptable behavior
-							skip "Zero-size buffers not supported on this platform/implementation"
+			rescue Errno::EINVAL
+				# Zero-size buffers may not be supported on all platforms
+				# This is acceptable behavior
+				skip "Zero-size buffers not supported on this platform/implementation"
 			end
 		end
 				
 		it "handles large buffers" do
-			large_size = 1024 * 1024  # 1MB
+			large_size = 1024 * 1024 # 1MB
 			handle = subject.new(large_size)
 						
 			buffer = handle.map

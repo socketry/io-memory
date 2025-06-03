@@ -48,6 +48,12 @@ Layout/EmptyLinesAroundModuleBody:
 Layout/EmptyLineAfterMagicComment:
    Enabled: true
 
+Layout/ExtraSpacing:
+  Enabled: true
+
+Layout/RescueEnsureAlignment:
+  Enabled: true
+
 Style/FrozenStringLiteralComment:
   Enabled: true
 
