@@ -1,0 +1,1 @@
+require_relative '../../fixtures/io/memory/a_memory_buffer' 
