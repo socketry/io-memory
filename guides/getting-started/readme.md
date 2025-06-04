@@ -28,21 +28,16 @@ require 'io/memory'
 
 # Create a memory-mapped buffer
 IO::Memory.with(1024) do |handle|
-  # Get a mapped IO::Buffer
-  buffer = handle.map
-  
-  # Write some data
-  message = "Hello, World!"
-  buffer.set_string(message, 0)
-  
-  # Read data back
-  result = buffer.get_string(0, message.length)
-  puts result # => "Hello, World!"
-  
-  # Access as IO object for traditional operations
-  io = handle.io
-  io.seek(0)
-  io.write("Additional data")
+	# Get a mapped IO::Buffer
+	buffer = handle.map
+	
+	# Write some data
+	message = "Hello, World!"
+	buffer.set_string(message, 0)
+	
+	# Read data back
+	result = buffer.get_string(0, message.length)
+	puts result # => "Hello, World!"
 end # Automatically cleaned up
 ```
 
@@ -101,11 +96,11 @@ Handle platform-specific limitations gracefully:
 require 'io/memory'
 
 begin
-  # Some platforms may not support zero-size buffers
-  handle = IO::Memory.new(0)
-  buffer = handle.map
-  handle.close
+	# Some platforms may not support zero-size buffers
+	handle = IO::Memory.new(0)
+	buffer = handle.map
+	handle.close
 rescue Errno::EINVAL => e
-  puts "Zero-size buffers not supported: #{e.message}"
+	puts "Zero-size buffers not supported: #{e.message}"
 end
 ```
